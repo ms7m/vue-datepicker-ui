@@ -10,23 +10,27 @@
         :value="formattedValue"
         readonly
       />
-      <svg
-        class="datepicker"
-        version="1.1"
-        xmlns="http://www.w3.org/2000/svg"
-        width="32"
-        height="32"
-        viewBox="0 0 32 32"
-      >
-        <path
-          d="M10 12h4v4h-4zM16 12h4v4h-4zM22 12h4v4h-4zM4 24h4v4h-4zM10 24h4v4h-4zM16 24h4v4h-4zM10 18h4v4h-4zM16 18h4v4h-4zM22 18h4v4h-4zM4 18h4v4h-4zM26 0v2h-4v-2h-14v2h-4v-2h-4v32h30v-32h-4zM28 30h-26v-22h26v22z"
-        ></path>
-      </svg>
+      <slot name="calendarIcon">
+        <svg
+          class="datepicker"
+          version="1.1"
+          xmlns="http://www.w3.org/2000/svg"
+          width="32"
+          height="32"
+          viewBox="0 0 32 32"
+        >
+          <path
+            d="M10 12h4v4h-4zM16 12h4v4h-4zM22 12h4v4h-4zM4 24h4v4h-4zM10 24h4v4h-4zM16 24h4v4h-4zM10 18h4v4h-4zM16 18h4v4h-4zM22 18h4v4h-4zM4 18h4v4h-4zM26 0v2h-4v-2h-14v2h-4v-2h-4v32h30v-32h-4zM28 30h-26v-22h26v22z"
+          ></path>
+        </svg>
+      </slot>
+
       <button
         v-if="showClearButton && selectedDate"
         type="button"
         class="clearButton"
-        @click="resetDate">
+        @click="resetDate"
+      >
         <svg
           version="1.1"
           xmlns="http://www.w3.org/2000/svg"
@@ -89,325 +93,328 @@
 </template>
 
 <script>
-import Calendar from 'calendar-data-generate'
+import Calendar from "calendar-data-generate";
 //
-import { MODE_ENUMS } from '@/utils/modes'
-import formatDate from '@/utils/formatDate'
+import { MODE_ENUMS } from "@/utils/modes";
+import formatDate from "@/utils/formatDate";
 //
-import CalendarUI from './calendar'
+import CalendarUI from "./calendar";
 
 export default {
-  name: 'VueDatePicker',
+  name: "VueDatePicker",
   components: { CalendarUI },
-  emits: ['update:modelValue', 'selectDate', 'reset'],
+  emits: ["update:modelValue", "selectDate", "reset"],
   props: {
     modelValue: {},
     textFormat: {
       type: String,
-      default: 'short'
+      default: "short",
     },
     dateFormat: {
       type: Object,
       default: () => {
-        return { day: '2-digit', month: 'short', year: 'numeric' }
-      }
+        return { day: "2-digit", month: "short", year: "numeric" };
+      },
     },
     format: {
       type: String,
-      default: ''
+      default: "",
     },
     rangeSeperator: {
       type: String,
-      default: '~'
+      default: "~",
     },
     position: {
       type: String,
-      default: 'left'
+      default: "left",
     },
     range: {
       type: Boolean,
-      default: false
+      default: false,
     },
     lang: {
       type: String,
-      default: 'tr'
+      default: "tr",
     },
     inputClass: {
       type: String,
-      default: ''
+      default: "",
     },
     firstDayOfWeek: {
       type: String,
-      validator: (val) => ['monday', 'sunday'].indexOf(val) > -1,
-      default: 'monday'
+      validator: (val) => ["monday", "sunday"].indexOf(val) > -1,
+      default: "monday",
     },
     disabledStartDate: {
       type: Object,
-      default () {
+      default() {
         return {
           from: null,
-          to: null
-        }
-      }
+          to: null,
+        };
+      },
     },
     disabledEndDate: {
       type: Object,
-      default () {
+      default() {
         return {
           from: null,
-          to: null
-        }
-      }
+          to: null,
+        };
+      },
     },
     disabled: {
       type: Boolean,
-      default: false
+      default: false,
     },
     placeholder: {
       type: String,
-      default: 'Select Date'
+      default: "Select Date",
     },
     circle: {
       type: Boolean,
-      default: false
+      default: false,
     },
     showClearButton: {
       type: Boolean,
-      default: false
+      default: false,
     },
     showPickerInital: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
-  data () {
+  data() {
     return {
       isShowPicker: false,
       currentDate: {
         year: new Date().getFullYear(),
         month: new Date().getMonth(),
         date: new Date().getDate(),
-        firstDayOfWeek: this.firstDayOfWeek
+        firstDayOfWeek: this.firstDayOfWeek,
       },
       currentDateEnd: {
         year: new Date().getFullYear(),
         month: new Date().getMonth(),
         date: new Date().getDate(),
-        firstDayOfWeek: this.firstDayOfWeek
+        firstDayOfWeek: this.firstDayOfWeek,
       },
       selectedDate: this.defaultSelectedDate(),
       calendarView: MODE_ENUMS.DAY,
-      calendarEndView: MODE_ENUMS.DAY
-    }
+      calendarEndView: MODE_ENUMS.DAY,
+    };
   },
   computed: {
-    disabledStartDateCalc () {
+    disabledStartDateCalc() {
       const unSelectedDate = {
         from: null,
-        to: null
-      }
+        to: null,
+      };
       if (this.range) {
-        const endDate = this.selectedDate[1]
-        let disabledDate = endDate ? new Date(endDate) : null
+        const endDate = this.selectedDate[1];
+        let disabledDate = endDate ? new Date(endDate) : null;
         disabledDate =
           !this.disabledStartDate.from ||
           disabledDate.getTime() < this.disabledStartDate.from.getTime()
             ? disabledDate
-            : this.disabledStartDate.from
-        unSelectedDate.from = disabledDate
-        unSelectedDate.to = this.disabledStartDate.from
+            : this.disabledStartDate.from;
+        unSelectedDate.from = disabledDate;
+        unSelectedDate.to = this.disabledStartDate.from;
       }
-      return unSelectedDate
+      return unSelectedDate;
     },
-    disabledEndDateCalc () {
+    disabledEndDateCalc() {
       const unSelectedDate = {
         from: null,
-        to: null
-      }
+        to: null,
+      };
       if (this.range) {
-        let disabledDate = new Date(this.selectedDate[0])
+        let disabledDate = new Date(this.selectedDate[0]);
         disabledDate =
           !this.disabledEndDate.to ||
           disabledDate.getTime() > this.disabledEndDate.to.getTime()
             ? disabledDate
-            : this.disabledEndDate.to
-        unSelectedDate.to = disabledDate
-        unSelectedDate.from = this.disabledEndDate.from
+            : this.disabledEndDate.to;
+        unSelectedDate.to = disabledDate;
+        unSelectedDate.from = this.disabledEndDate.from;
       }
-      return unSelectedDate
+      return unSelectedDate;
     },
-    calendar () {
+    calendar() {
       return new Calendar(
         this.currentDate,
         this.lang,
         this.textFormat,
         { ...this.dateFormat },
         this.range ? this.disabledStartDateCalc : this.disabledStartDate
-      )
+      );
     },
-    calendarEnd () {
-      if (!this.range) return {}
+    calendarEnd() {
+      if (!this.range) return {};
       return new Calendar(
         this.currentDateEnd,
         this.lang,
         this.textFormat,
         { ...this.dateFormat },
         this.disabledEndDateCalc
-      )
+      );
     },
-    formattedValue () {
+    formattedValue() {
       if (!this.range) {
-        return this.formatDate(this.selectedDate)
-      } else if (!Array.isArray(this.selectedDate) || this.selectedDate.filter(Boolean).length !== 2) return null
+        return this.formatDate(this.selectedDate);
+      } else if (
+        !Array.isArray(this.selectedDate) ||
+        this.selectedDate.filter(Boolean).length !== 2
+      )
+        return null;
       return `${this.formatDate(this.selectedDate[0])} ${
         this.rangeSeperator
-      } ${this.formatDate(this.selectedDate[1])}`
-    }
+      } ${this.formatDate(this.selectedDate[1])}`;
+    },
   },
   methods: {
-    formatDate (value) {
-      return formatDate(value, this)
+    formatDate(value) {
+      return formatDate(value, this);
     },
-    prevMonth (picker) {
+    prevMonth(picker) {
       const currentDate =
-        picker === 'start' ? this.currentDate : this.currentDateEnd
-      currentDate.month = currentDate.month - 1
+        picker === "start" ? this.currentDate : this.currentDateEnd;
+      currentDate.month = currentDate.month - 1;
       if (currentDate.month === -1) {
-        currentDate.year = currentDate.year - 1
-        currentDate.month = 11
+        currentDate.year = currentDate.year - 1;
+        currentDate.month = 11;
       }
     },
-    nextMonth (picker) {
+    nextMonth(picker) {
       const currentDate =
-        picker === 'start' ? this.currentDate : this.currentDateEnd
-      currentDate.month = currentDate.month + 1
+        picker === "start" ? this.currentDate : this.currentDateEnd;
+      currentDate.month = currentDate.month + 1;
       if (currentDate.month === 12) {
-        currentDate.year = currentDate.year + 1
-        currentDate.month = 0
+        currentDate.year = currentDate.year + 1;
+        currentDate.month = 0;
       }
     },
-    changeViewMode ({ mode, picker }) {
-      const isEndPicker = picker === 'end'
-      const calendar = `calendar${isEndPicker ? 'End' : ''}View`
-      this[calendar] = mode
+    changeViewMode({ mode, picker }) {
+      const isEndPicker = picker === "end";
+      const calendar = `calendar${isEndPicker ? "End" : ""}View`;
+      this[calendar] = mode;
     },
-    setYears ({ route, picker }) {
-      if (picker === 'start') {
+    setYears({ route, picker }) {
+      if (picker === "start") {
         const year =
-          route === 'prev'
+          route === "prev"
             ? this.calendar.years[0] - 11
-            : route === 'next'
-              ? this.calendar.years[10] + 1
-              : ''
-        this.currentDate.year = year
-      } else if (picker === 'end') {
+            : route === "next"
+            ? this.calendar.years[10] + 1
+            : "";
+        this.currentDate.year = year;
+      } else if (picker === "end") {
         const year =
-          route === 'prev'
+          route === "prev"
             ? this.calendarEnd.years[0] - 11
-            : route === 'next'
-              ? this.calendarEnd.years[10] + 1
-              : ''
-        this.currentDateEnd.year = year
+            : route === "next"
+            ? this.calendarEnd.years[10] + 1
+            : "";
+        this.currentDateEnd.year = year;
       }
     },
-    setYear ({ year, picker }) {
-      this.setUniqYear({ year, picker })
-      this.changeViewMode({ mode: MODE_ENUMS.MONTH, picker })
+    setYear({ year, picker }) {
+      this.setUniqYear({ year, picker });
+      this.changeViewMode({ mode: MODE_ENUMS.MONTH, picker });
     },
-    setUniqYear ({ year, picker }) {
-      if (picker === 'start') this.currentDate.year = year
-      else if (picker === 'end') this.currentDateEnd.year = year
+    setUniqYear({ year, picker }) {
+      if (picker === "start") this.currentDate.year = year;
+      else if (picker === "end") this.currentDateEnd.year = year;
     },
-    setMonth ({ month, picker }) {
-      if (picker === 'start') this.currentDate.month = month
-      else if (picker === 'end') this.currentDateEnd.month = month
-      this.changeViewMode({ mode: MODE_ENUMS.DAY, picker })
+    setMonth({ month, picker }) {
+      if (picker === "start") this.currentDate.month = month;
+      else if (picker === "end") this.currentDateEnd.month = month;
+      this.changeViewMode({ mode: MODE_ENUMS.DAY, picker });
     },
-    handlerDate ({ fullDate, picker = null }) {
+    handlerDate({ fullDate, picker = null }) {
       if (!this.range) {
-        this.setDate(fullDate)
-        return
+        this.setDate(fullDate);
+        return;
       }
       const selectedDates = [
-        picker === 'start' ? fullDate : this.selectedDate[0],
-        picker === 'end' ? fullDate : this.selectedDate[1]
-      ]
-      this.setDate(selectedDates)
+        picker === "start" ? fullDate : this.selectedDate[0],
+        picker === "end" ? fullDate : this.selectedDate[1],
+      ];
+      this.setDate(selectedDates);
     },
-    setDate (selectedDates) {
-      if (typeof selectedDates === 'undefined') {
-        this.resetDate()
-        return
+    setDate(selectedDates) {
+      if (typeof selectedDates === "undefined") {
+        this.resetDate();
+        return;
       }
-      this.selectedDate = selectedDates
-      this.emitInputAction()
+      this.selectedDate = selectedDates;
+      this.emitInputAction();
     },
-    emitInputAction () {
+    emitInputAction() {
       if (JSON.stringify(this.modelValue) !== this.selectedDate) {
-        this.$emit('update:modelValue', this.selectedDate)
+        this.$emit("update:modelValue", this.selectedDate);
       }
-      this.$nextTick(() => {
-      })
+      this.$nextTick(() => {});
       if (this.range) {
-        if (this.selectedDate.filter(Boolean).length === 2) this.close()
+        if (this.selectedDate.filter(Boolean).length === 2) this.close();
       } else {
-        this.close()
+        this.close();
       }
     },
-    close () {
-      this.isShowPicker = false
-      this.calendarView = MODE_ENUMS.DAY
-      this.calendarEndView = MODE_ENUMS.DAY
+    close() {
+      this.isShowPicker = false;
+      this.calendarView = MODE_ENUMS.DAY;
+      this.calendarEndView = MODE_ENUMS.DAY;
     },
-    resetDate () {
-      this.selectedDate = this.defaultSelectedDate()
-      this.$emit('reset')
+    resetDate() {
+      this.selectedDate = this.defaultSelectedDate();
+      this.$emit("reset");
     },
-    defaultSelectedDate () {
-      return this.range ? [null, null] : null
+    defaultSelectedDate() {
+      return this.range ? [null, null] : null;
     },
-    setCurrents () {
-      if (typeof this.modelValue === 'undefined') {
-        this.resetDate()
-        return
+    setCurrents() {
+      if (typeof this.modelValue === "undefined") {
+        this.resetDate();
+        return;
       }
       if (this.range) {
         if (this.modelValue[0]) {
-          this.currentDate.year = new Date(this.modelValue[0]).getFullYear()
-          this.currentDate.month = new Date(this.modelValue[0]).getMonth()
-          this.currentDate.date = new Date(this.modelValue[0]).getDate()
+          this.currentDate.year = new Date(this.modelValue[0]).getFullYear();
+          this.currentDate.month = new Date(this.modelValue[0]).getMonth();
+          this.currentDate.date = new Date(this.modelValue[0]).getDate();
         }
         if (this.modelValue[1]) {
-          this.currentDateEnd.year = new Date(this.modelValue[1]).getFullYear()
-          this.currentDateEnd.month = new Date(this.modelValue[1]).getMonth()
-          this.currentDateEnd.date = new Date(this.modelValue[1]).getDate()
+          this.currentDateEnd.year = new Date(this.modelValue[1]).getFullYear();
+          this.currentDateEnd.month = new Date(this.modelValue[1]).getMonth();
+          this.currentDateEnd.date = new Date(this.modelValue[1]).getDate();
         }
       } else if (this.modelValue) {
-        this.currentDate.year = new Date(this.modelValue).getFullYear()
-        this.currentDate.month = new Date(this.modelValue).getMonth()
-        this.currentDate.date = new Date(this.modelValue).getDate()
+        this.currentDate.year = new Date(this.modelValue).getFullYear();
+        this.currentDate.month = new Date(this.modelValue).getMonth();
+        this.currentDate.date = new Date(this.modelValue).getDate();
       }
-    }
+    },
   },
-  mounted () {
-    this.setDate(this.modelValue)
-    this.setCurrents()
-    this.isShowPicker = this.showPickerInital
-    this.$watch('modelValue', () => {
-      this.setCurrents()
-      this.setDate(this.modelValue)
-    })
-    this.$watch('selectedDate', (value) => {
-      if (!value && this.modelValue === value) return
-      this.$emit('selectDate', value)
-    })
-    document.body.addEventListener('click', (e) => {
-      const Datepicker = this.$el
-      const isThis = Datepicker.contains(e.target)
-      if (!isThis) this.close()
-    })
-  }
-}
+  mounted() {
+    this.setDate(this.modelValue);
+    this.setCurrents();
+    this.isShowPicker = this.showPickerInital;
+    this.$watch("modelValue", () => {
+      this.setCurrents();
+      this.setDate(this.modelValue);
+    });
+    this.$watch("selectedDate", (value) => {
+      if (!value && this.modelValue === value) return;
+      this.$emit("selectDate", value);
+    });
+    document.body.addEventListener("click", (e) => {
+      const Datepicker = this.$el;
+      const isThis = Datepicker.contains(e.target);
+      if (!isThis) this.close();
+    });
+  },
+};
 </script>
 
 <style>
@@ -746,7 +753,7 @@ export default {
   background: var(--v-calendar-range-bg-color);
 }
 
-.v-calendar .calendar .days .day:hover .number{
+.v-calendar .calendar .days .day:hover .number {
   background: var(--v-calendar-day-hover-bg-color);
 }
 
